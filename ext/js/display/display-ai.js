@@ -217,7 +217,14 @@ export class DisplayAi {
      */
     _tryParseJson(text) {
         if (typeof text !== 'string') { return null; }
-        const trimmed = text.trim();
+        let trimmed = text.trim();
+
+        // Remove markdown code block fences if present (e.g., ```json ... ``` or ``` ... ```)
+        const codeBlockMatch = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(trimmed);
+        if (codeBlockMatch !== null) {
+            trimmed = codeBlockMatch[1].trim();
+        }
+
         if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) { return null; }
         try {
             // eslint-disable-next-line no-restricted-syntax
