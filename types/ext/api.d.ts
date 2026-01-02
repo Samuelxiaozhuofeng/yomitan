@@ -119,6 +119,10 @@ export type GetTermFrequenciesDetailsTermReadingListItem = {
     reading: string | null;
 };
 
+export type AiExplainResult = {
+    text: string;
+};
+
 type ApiSurface = {
     applicationReady: {
         params: void;
@@ -133,6 +137,17 @@ type ApiSurface = {
     optionsGetFull: {
         params: void;
         return: Settings.Options;
+    };
+    aiGetSettings: {
+        params: void;
+        return: Settings.GlobalAiOptions;
+    };
+    aiExplain: {
+        params: {
+            word: string;
+            context: string;
+        };
+        return: AiExplainResult;
     };
     termsFind: {
         params: {

@@ -23,6 +23,7 @@ import {ModalController} from '../pages/settings/modal-controller.js';
 import {SettingsController} from '../pages/settings/settings-controller.js';
 import {SettingsDisplayController} from '../pages/settings/settings-display-controller.js';
 import {DisplayAnki} from './display-anki.js';
+import {DisplayAi} from './display-ai.js';
 import {DisplayAudio} from './display-audio.js';
 import {Display} from './display.js';
 import {SearchActionPopupController} from './search-action-popup-controller.js';
@@ -50,6 +51,9 @@ await Application.main(true, async (application) => {
 
     const displayAnki = new DisplayAnki(display, displayAudio);
     displayAnki.prepare();
+
+    const displayAi = new DisplayAi(display);
+    displayAi.prepare();
 
     const searchDisplayController = new SearchDisplayController(display, displayAudio, searchPersistentStateController);
     await searchDisplayController.prepare();

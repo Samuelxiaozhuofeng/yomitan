@@ -52,6 +52,22 @@ export class API {
     }
 
     /**
+     * @returns {Promise<import('api').ApiReturn<'aiGetSettings'>>}
+     */
+    aiGetSettings() {
+        return this._invoke('aiGetSettings', void 0);
+    }
+
+    /**
+     * @param {import('api').ApiParam<'aiExplain', 'word'>} word
+     * @param {import('api').ApiParam<'aiExplain', 'context'>} context
+     * @returns {Promise<import('api').ApiReturn<'aiExplain'>>}
+     */
+    aiExplain(word, context) {
+        return this._invoke('aiExplain', {word, context});
+    }
+
+    /**
      * @param {import('api').ApiParam<'termsFind', 'text'>} text
      * @param {import('api').ApiParam<'termsFind', 'details'>} details
      * @param {import('api').ApiParam<'termsFind', 'optionsContext'>} optionsContext

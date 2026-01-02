@@ -2098,3 +2098,96 @@ button.footer-notification-close-button {
 :root[data-popup-display-mode=full-width] .frame-resizer-container {
     display: none;
 }
+
+.ai-explanation {
+    margin: 0 0 0.75em 0;
+    padding: 0.75em;
+    border: var(--thin-border-size) solid var(--light-border-color);
+    border-radius: 0.5em;
+    background-color: var(--notification-background-color);
+}
+
+.ai-explanation-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.ai-explanation-title {
+    font-weight: 600;
+}
+
+.ai-explanation-status {
+    margin-bottom: 0.5em;
+    color: var(--text-color-light3);
+    white-space: pre-wrap;
+}
+
+.ai-explanation-content {
+    white-space: pre-wrap;
+}
+
+.ai-explanation-render-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75em;
+    margin-bottom: 0.75em;
+}
+
+.ai-explanation-render-title {
+    font-size: 1.05em;
+    font-weight: 700;
+}
+
+.ai-explanation-render-badge {
+    padding: 0.15em 0.5em;
+    border-radius: 999px;
+    border: var(--thin-border-size) solid var(--medium-border-color);
+    background: var(--background-color);
+    color: var(--text-color-light1);
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+.ai-explanation-section {
+    padding-top: 0.5em;
+    margin-top: 0.5em;
+    border-top: var(--thin-border-size) solid var(--light-border-color);
+}
+
+.ai-explanation-section-title {
+    font-weight: 700;
+    margin-bottom: 0.25em;
+}
+
+.ai-explanation-section-body {
+    white-space: pre-wrap;
+    line-height: 1.45;
+}
+
+.ai-explanation-examples {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
+.ai-explanation-example {
+    padding: 0.5em 0.6em;
+    border-radius: 0.5em;
+    background: var(--background-color);
+    border: var(--thin-border-size) solid var(--light-border-color);
+}
+
+.ai-explanation-example-text {
+    font-weight: 600;
+    margin-bottom: 0.25em;
+}
+
+.ai-explanation-example-explain {
+    color: var(--text-color-light2);
+    white-space: pre-wrap;
+    line-height: 1.45;
+}

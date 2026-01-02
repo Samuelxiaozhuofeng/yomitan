@@ -63,11 +63,22 @@ export type Options = {
 
 export type GlobalOptions = {
     database: GlobalDatabaseOptions;
+    ai: GlobalAiOptions;
     dataTransmissionConsentShown: boolean;
 };
 
 export type GlobalDatabaseOptions = {
     prefixWildcardsSupported: boolean;
+};
+
+export type GlobalAiMode = 'auto' | 'manual';
+
+export type GlobalAiOptions = {
+    mode: GlobalAiMode;
+    apiUrl: string;
+    apiKey: string;
+    model: string;
+    prompt: string;
 };
 
 export type Profile = {

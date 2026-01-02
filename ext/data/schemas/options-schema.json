@@ -1388,6 +1388,7 @@
             "type": "object",
             "required": [
                 "database",
+                "ai",
                 "dataTransmissionConsentShown"
             ],
             "properties": {
@@ -1400,6 +1401,39 @@
                         "prefixWildcardsSupported": {
                             "type": "boolean",
                             "default": false
+                        }
+                    }
+                },
+                "ai": {
+                    "type": "object",
+                    "required": [
+                        "mode",
+                        "apiUrl",
+                        "apiKey",
+                        "model",
+                        "prompt"
+                    ],
+                    "properties": {
+                        "mode": {
+                            "type": "string",
+                            "enum": ["auto", "manual"],
+                            "default": "auto"
+                        },
+                        "apiUrl": {
+                            "type": "string",
+                            "default": "http://127.0.0.1:8317/v1/chat/completions"
+                        },
+                        "apiKey": {
+                            "type": "string",
+                            "default": ""
+                        },
+                        "model": {
+                            "type": "string",
+                            "default": ""
+                        },
+                        "prompt": {
+                            "type": "string",
+                            "default": "Explain \"{word}\" in this context:\\n{context}"
                         }
                     }
                 },

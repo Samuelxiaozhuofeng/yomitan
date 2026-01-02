@@ -24,6 +24,7 @@ import {YomitanApi} from '../comm/yomitan-api.js';
 import {createApiMap, invokeApiMapHandler} from '../core/api-map.js';
 import {ExtensionError} from '../core/extension-error.js';
 import {fetchText} from '../core/fetch-utilities.js';
+import {readResponseJson} from '../core/json.js';
 import {logErrorLevelToNumber} from '../core/log-utilities.js';
 import {log} from '../core/log.js';
 import {isObjectNotArray} from '../core/object-utilities.js';
@@ -147,6 +148,8 @@ export class Backend {
             ['requestBackendReadySignal',    this._onApiRequestBackendReadySignal.bind(this)],
             ['optionsGet',                   this._onApiOptionsGet.bind(this)],
             ['optionsGetFull',               this._onApiOptionsGetFull.bind(this)],
+            ['aiGetSettings',               this._onApiAiGetSettings.bind(this)],
+            ['aiExplain',                   this._onApiAiExplain.bind(this)],
             ['kanjiFind',                    this._onApiKanjiFind.bind(this)],
             ['termsFind',                    this._onApiTermsFind.bind(this)],
             ['parseText',                    this._onApiParseText.bind(this)],
@@ -549,6 +552,39 @@ export class Backend {
         return dictionaryEntries;
     }
 
+    /** @type {import('api').ApiHandler<'aiGetSettings'>} */
+    _onApiAiGetSettings() {
+        return clone(this._getOptionsFull(false).global.ai);
+    }
+
+    /** @type {import('api').ApiHandler<'aiExplain'>} */
+    async _onApiAiExplain({word, context}) {
+        const aiOptions = this._getOptionsFull(false).global.ai;
+        const apiUrl = this._normalizeAiApiUrl(aiOptions.apiUrl);
+        if (apiUrl.length === 0) { throw new Error('AI API URL not configured'); }
+
+        const prompt = this._buildAiPrompt(aiOptions.prompt, word, context);
+
+        /** @type {{model?: string, messages: {role: string, content: string}[], stream: boolean, response_format?: {type: string}}} */
+        const payload = {
+            messages: [{role: 'user', content: prompt}],
+            stream: false,
+            response_format: {type: 'json_object'},
+        };
+        if (aiOptions.model.length > 0) {
+            payload.model = aiOptions.model;
+        }
+
+        /** @type {Record<string, string>} */
+        const headers = {'Content-Type': 'application/json'};
+        if (aiOptions.apiKey.length > 0) {
+            headers.Authorization = `Bearer ${aiOptions.apiKey}`;
+        }
+
+        const {text} = await this._fetchAiCompletion(apiUrl, headers, payload);
+        return {text};
+    }
+
     /** @type {import('api').ApiHandler<'termsFind'>} */
     async _onApiTermsFind({text, details, optionsContext}) {
         const options = this._getProfileOptions(optionsContext, false);
@@ -603,6 +639,114 @@ export class Backend {
         }
 
         return results;
+    }
+
+    /**
+     * @param {string} apiUrl
+     * @returns {string}
+     */
+    _normalizeAiApiUrl(apiUrl) {
+        let value = typeof apiUrl === 'string' ? apiUrl.trim() : '';
+        if (value.length === 0) { return ''; }
+        value = value.replace(/\/+$/, '');
+        if (value.endsWith('/v1')) {
+            return `${value}/chat/completions`;
+        }
+        return value;
+    }
+
+    /**
+     * @param {string} prompt
+     * @param {string} word
+     * @param {string} context
+     * @returns {string}
+     */
+    _buildAiPrompt(style, word, context) {
+        const style2 = typeof style === 'string' ? style.trim() : '';
+        const word2 = typeof word === 'string' ? word : '';
+        const context2 = typeof context === 'string' ? context : '';
+
+        const styleBlock = (style2.length > 0 ? `\n\nStyle requirements:\n${style2}\n` : '');
+
+        return (
+            'You are a language-learning assistant.\n' +
+            'Return a single JSON object and NOTHING else (no markdown, no code fences, no comments).\n' +
+            'The JSON must be valid, UTF-8, and use double quotes.\n' +
+            'Output schema:\n' +
+            '{\n' +
+            '  "title": string,\n' +
+            '  "word": string,\n' +
+            '  "meaning": string,\n' +
+            '  "meaning_in_context": string,\n' +
+            '  "usage": string,\n' +
+            '  "examples": [{"text": string, "explain": string}]\n' +
+            '}\n' +
+            styleBlock +
+            '\nInput:\n' +
+            `word: ${word2}\n` +
+            `context: ${context2}\n`
+        );
+    }
+
+    /**
+     * @param {string} apiUrl
+     * @param {Record<string, string>} headers
+     * @param {unknown} payload
+     * @returns {Promise<{text: string}>}
+     */
+    async _fetchAiCompletion(apiUrl, headers, payload) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000);
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(payload),
+                signal: controller.signal,
+            });
+
+            const contentType = response.headers.get('content-type') ?? '';
+            const isJson = contentType.includes('application/json');
+            /** @type {unknown} */
+            const data = isJson ? await readResponseJson(response) : await response.text();
+
+            if (!response.ok) {
+                const body = typeof data === 'string' ? data : JSON.stringify(data);
+                throw new Error(`AI request failed (${response.status}): ${body.slice(0, 500)}`);
+            }
+
+            /** @type {string|null} */
+            let content = null;
+            if (typeof data === 'object' && data !== null) {
+                /** @type {unknown} */
+                const choices = /** @type {{choices?: unknown}} */ (data).choices;
+                if (Array.isArray(choices) && choices.length > 0) {
+                    /** @type {unknown} */
+                    const message = /** @type {{message?: unknown}} */ (/** @type {{message?: unknown}} */ (choices[0])).message;
+                    if (typeof message === 'object' && message !== null) {
+                        /** @type {unknown} */
+                        const contentCandidate = /** @type {{content?: unknown}} */ (message).content;
+                        if (typeof contentCandidate === 'string') {
+                            content = contentCandidate;
+                        }
+                    }
+                }
+            }
+
+            if (content === null) {
+                const body = typeof data === 'string' ? data : JSON.stringify(data);
+                throw new Error(`AI response missing content: ${body.slice(0, 500)}`);
+            }
+
+            return {text: content};
+        } catch (e) {
+            if (e instanceof DOMException && e.name === 'AbortError') {
+                throw new Error('AI request timed out');
+            }
+            throw e;
+        } finally {
+            clearTimeout(timeout);
+        }
     }
 
     /** @type {import('api').ApiHandler<'getAnkiConnectVersion'>} */
